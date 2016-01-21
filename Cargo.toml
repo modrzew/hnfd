@@ -1,8 +1,9 @@
 [package]
 name = "hnfd"
 version = "0.1.0"
-authors = ["Tomasz Modrzyński <tomasz.modrzynski@stxnext.pl>"]
+authors = ["Modrzew <dev@modriv.net>"]
 
 [dependencies]
 rustc-serialize = "0.3"
-iron = "*"
+# iron = "*"
+websocket = "0.15.0"

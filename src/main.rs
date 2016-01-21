@@ -1,24 +1,24 @@
 extern crate rustc_serialize;
-extern crate iron;
+extern crate websocket;
 
-use iron::prelude::*;
-use iron::status;
 use rustc_serialize::json;
 
 mod models;
+mod server;
 
 
-
-fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((
-        status::Ok,
-        json::encode(&vec![1, 2, 3, 4]).unwrap(),
-    )))
-}
+// fn hello_world(_: &mut Request) -> IronResult<Response> {
+//     Ok(Response::with((
+//         status::Ok,
+//         json::encode(&vec![1, 2, 3, 4]).unwrap(),
+//     )))
+// }
 
 fn main() {
-    let context = models::initialize_context();
+    let context = models::Context::new();
     println!("I has {} cards", context.cards.len());
+
+    server::start();
 
     // println!("On 3000");
     // Iron::new(hello_world).http("localhost:3000").unwrap();

@@ -11,7 +11,6 @@ pub enum Yaku {
     none,
 }
 
-
 pub struct Card {
     month: i32,
     points: i32,
@@ -36,11 +35,19 @@ impl Card {
     }
 }
 
-
 pub struct Context {
     pub cards: Vec<Card>
 }
 
+impl Context {
+    pub fn new() -> Context {
+        let mut cards: Vec<Card> = Vec::new();
+        fill_cards(&mut cards);
+        Context{
+            cards: cards
+        }
+    }
+}
 
 fn fill_cards(cards: &mut Vec<Card>) {
     // January
@@ -103,12 +110,4 @@ fn fill_cards(cards: &mut Vec<Card>) {
     cards.push(Card::new(12, 1));
     cards.push(Card::new(12, 1));
     cards.push(Card::new(12, 20));
-}
-
-pub fn initialize_context() -> Context {
-    let mut cards: Vec<Card> = Vec::new();
-    fill_cards(&mut cards);
-    Context{
-        cards: cards
-    }
 }
