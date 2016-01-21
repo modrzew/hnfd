@@ -1,33 +1,49 @@
+use std::sync::mpsc;
 use std::thread;
 
-use websocket::{Server, Message, Sender, Receiver};
-use websocket::message::Type;
-use websocket::header::WebSocketProtocol;
+use rustc_serialize::json;
+use ws;
+use uuid::Uuid;
 
+struct Server {
+    receiver: mpsc::Receiver<String>,
+}
+
+struct SingleClientHandler {
+    ws: ws::Sender,
+    id: String,
+    sender: mpsc::Sender<String>,
+}
+
+impl ws::Handler for SingleClientHandler {
+    fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
+        self.id = Uuid::new_v4().to_simple_string();
+        Ok(())
+    }
+    fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
+        self.sender.send(msg.as_text().unwrap().to_string());
+        println!("Something sent");
+        Ok(())
+    }
+}
 
 pub fn start() {
-    let server = Server::bind("127.0.0.1:2794").unwrap();
-    for connection in server {
-        // OMG this shouldn't be separate thread for each connection
-        thread::spawn(move || {
-            let request = connection.unwrap().read_request().unwrap();
-            let headers = request.headers.clone();
+    let (sender, receiver): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+    // let server = Server {
+    //     receiver: receiver,
+    // };
+    thread::spawn(move || {
+        println!("Initialized listener");
+        while let Ok(msg) = receiver.recv() {
+            println!("Got {}", msg);
+        }
+    });
 
-            request.validate().unwrap();
-
-            let mut response = request.accept();
-            let mut client = response.send().unwrap();
-            let ip = client.get_mut_sender()
-                .get_mut()
-                .peer_addr()
-                .unwrap();
-            println!("Connection from {}", ip);
-            let message = Message::text("Hello");
-            client.send_message(&message).unwrap();
-            let (mut sender, mut receiver) = client.split();
-            let message = Message::close();
-            sender.send_message(&message).unwrap();
-            println!("Client {} disconnected", ip);
-        });
-    }
+    ws::listen("127.0.0.1:3012", |out| {
+        SingleClientHandler{
+            ws: out,
+            sender: sender.clone(),
+            id: "".to_string()
+        }
+    }).unwrap();
 }
