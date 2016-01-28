@@ -2,9 +2,11 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 
-use rustc_serialize::json;
+// use rustc_serialize::json;
 use ws;
 use uuid::Uuid;
+
+use models;
 
 struct Message {
     client_id: String,
@@ -14,14 +16,16 @@ struct Message {
 
 struct Server {
     receiver: mpsc::Receiver<Message>,
-    clients: HashMap<String, ws::Sender>
+    clients: HashMap<String, ws::Sender>,
+    cards: Vec<models::Card>,
 }
 
 impl Server {
-    fn new(receiver: mpsc::Receiver<Message>) -> Server {
+    fn new(receiver: mpsc::Receiver<Message>, cards: Vec<models::Card>) -> Server {
         Server {
             receiver: receiver,
-            clients: HashMap::new()
+            clients: HashMap::new(),
+            cards: cards,
         }
     }
 
@@ -42,9 +46,15 @@ impl Server {
             for (id, client) in &self.clients {
                 if id.to_string() != msg.client_id {
                     client.send(content).unwrap();
+                } else {
+                    // Tell something about card if that's an int
+                    if let Ok(card_id) = content.parse::<usize>() {
+                        let card = &self.cards[card_id];
+                        client.send(card.get_info()).unwrap();
+                    }
                 }
             }
-            println!("{}: {}", msg.client_id, msg.content);
+            println!("{}: {}", msg.client_id, content);
         }
     }
 }
@@ -77,8 +87,9 @@ impl ws::Handler for SingleClientHandler {
 }
 
 pub fn start() {
+    let cards = models::get_cards();
     let (message_sender, message_receiver): (mpsc::Sender<Message>, mpsc::Receiver<Message>) = mpsc::channel();
-    let mut server = Server::new(message_receiver);
+    let mut server = Server::new(message_receiver, cards);
 
     thread::spawn(move || {
         server.run()
