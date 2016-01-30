@@ -1,15 +1,15 @@
 use std::fmt;
 
+#[derive(Eq, PartialEq, Hash, Clone)]
 pub enum Yaku {
     Poetry,
     Flowers,
     Purple,
-    Butterflies,
-    Boar,
+    Inoshikachou,
     Moon,
     Salamander,
-    Deer,
     Gramps,
+    Month,
     None,
 }
 
@@ -19,12 +19,11 @@ impl fmt::Display for Yaku {
             &Yaku::Poetry => "Poetry",
             &Yaku::Flowers => "Flowers",
             &Yaku::Purple => "Purple",
-            &Yaku::Butterflies => "Butterflies",
-            &Yaku::Boar => "Boar",
+            &Yaku::Inoshikachou => "Inoshikachou",
             &Yaku::Moon => "Moon",
             &Yaku::Salamander => "Salamander",
-            &Yaku::Deer => "Deer",
             &Yaku::Gramps => "Gramps",
+            &Yaku::Month => "Month",
             &Yaku::None => "None",
         };
         write!(f, "{}", value)
@@ -32,13 +31,13 @@ impl fmt::Display for Yaku {
 }
 
 pub struct Card {
-    month: i32,
-    points: i32,
-    yaku: Yaku,
+    pub month: u8,
+    pub points: u8,
+    pub yaku: Yaku,
 }
 
 impl Card {
-    fn new_yaku(month: i32, points: i32, yaku: Yaku) -> Card {
+    pub fn new_yaku(month: u8, points: u8, yaku: Yaku) -> Card {
         Card{
             month: month,
             points: points,
@@ -46,7 +45,7 @@ impl Card {
         }
     }
 
-    fn new(month: i32, points: i32) -> Card {
+    pub fn new(month: u8, points: u8) -> Card {
         Card{
             month: month,
             points: points,
@@ -90,12 +89,12 @@ pub fn get_cards() -> Vec<Card> {
     cards.push(Card::new(6, 1));
     cards.push(Card::new(6, 1));
     cards.push(Card::new_yaku(6, 5, Yaku::Purple));
-    cards.push(Card::new_yaku(6, 10, Yaku::Butterflies));
+    cards.push(Card::new_yaku(6, 10, Yaku::Inoshikachou));
     // July
     cards.push(Card::new(7, 1));
     cards.push(Card::new(7, 1));
     cards.push(Card::new(7, 5));
-    cards.push(Card::new_yaku(7, 20, Yaku::Boar));
+    cards.push(Card::new_yaku(7, 20, Yaku::Inoshikachou));
     // August
     cards.push(Card::new(8, 1));
     cards.push(Card::new(8, 1));
@@ -110,7 +109,7 @@ pub fn get_cards() -> Vec<Card> {
     cards.push(Card::new(10, 1));
     cards.push(Card::new(10, 1));
     cards.push(Card::new_yaku(10, 5, Yaku::Purple));
-    cards.push(Card::new_yaku(10, 10, Yaku::Deer));
+    cards.push(Card::new_yaku(10, 10, Yaku::Inoshikachou));
     // November
     cards.push(Card::new(11, 1));
     cards.push(Card::new(11, 5));
