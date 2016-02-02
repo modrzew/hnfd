@@ -3,20 +3,23 @@ use std::sync::mpsc;
 use std::thread;
 
 // use rustc_serialize::json;
+use mio;
 use ws;
 use uuid::Uuid;
 
+use game::{Game, Player};
 use models;
 
 struct Message {
-    client_id: String,
+    client_id: mio::Token,
     content: String,
     ws: Option<ws::Sender>,
 }
 
 struct Server {
     receiver: mpsc::Receiver<Message>,
-    clients: HashMap<String, ws::Sender>,
+    clients: HashMap<mio::Token, ws::Sender>,
+    games: Vec<Game>,
     cards: Vec<models::Card>,
 }
 
@@ -25,16 +28,23 @@ impl Server {
         Server {
             receiver: receiver,
             clients: HashMap::new(),
+            games: Vec::new(),
             cards: cards,
         }
     }
 
     fn run(&mut self) {
         println!("Initialized server");
+        self.games.push(Game::new());
         while let Ok(msg) = self.receiver.recv() {
             // Add client on new connection
             if let Some(ws) = msg.ws {
-                self.clients.insert(msg.client_id, ws);
+                if self.clients.len() <= 2 {
+                    self.clients.insert(msg.client_id, ws);
+                } else {
+                    ws.close_with_reason(ws::CloseCode::Normal, "Only 2 players supported at this time").unwrap();
+                }
+                self.games[0].players.push(Player::new(msg.client_id));
                 continue;
             }
             let content = msg.content.trim();
@@ -42,34 +52,28 @@ impl Server {
             if content.len() == 0 {
                 continue;
             }
-            // Notify all other clients
-            for (id, client) in &self.clients {
-                if id.to_string() != msg.client_id {
-                    client.send(content).unwrap();
-                } else {
-                    // Tell something about card if that's an int
-                    if let Ok(card_id) = content.parse::<usize>() {
-                        let card = &self.cards[card_id];
-                        client.send(card.get_info()).unwrap();
-                    }
-                }
-            }
-            println!("{}: {}", msg.client_id, content);
+            // Handle message
+            let current_game = &self.games[0];
+            let (to_current, to_opponent) = current_game.handle();
+            let current = self.clients.get(&msg.client_id).unwrap();
+            let opponent = self.clients.get(&current_game.get_other(msg.client_id)).unwrap();
+            current.send(to_current);
+            opponent.send(to_opponent);
+            // Debug
+            println!("{}: {}", msg.client_id.as_usize(), content);
         }
     }
 }
 
 struct SingleClientHandler {
     ws: ws::Sender,
-    id: String,
     sender: mpsc::Sender<Message>,
 }
 
 impl ws::Handler for SingleClientHandler {
     fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
-        self.id = Uuid::new_v4().to_simple_string();
         self.sender.send(Message {
-            client_id: self.id.to_string(),
+            client_id: self.ws.token(),
             content: "".to_string(),
             ws: Some(self.ws.clone()),
         }).unwrap();
@@ -78,7 +82,7 @@ impl ws::Handler for SingleClientHandler {
 
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
         self.sender.send(Message {
-            client_id: self.id.to_string(),
+            client_id: self.ws.token(),
             content: msg.as_text().unwrap().to_string(),
             ws: None
         }).unwrap();
@@ -99,7 +103,6 @@ pub fn start() {
         SingleClientHandler{
             ws: out,
             sender: message_sender.clone(),
-            id: "".to_string()
         }
     }).unwrap();
 }
