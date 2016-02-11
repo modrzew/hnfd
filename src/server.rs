@@ -37,6 +37,7 @@ impl Server {
         println!("Initialized server");
         self.games.push(Game::new());
         while let Ok(msg) = self.receiver.recv() {
+            let mut should_start = false;
             // Add client on new connection
             if let Some(ws) = msg.ws {
                 if self.clients.len() < 2 {
@@ -47,14 +48,11 @@ impl Server {
                 }
                 self.games[0].add_player(msg.client_id);
                 if self.clients.len() == 2 {
+                    should_start = true;
                     self.games[0].start();
+                } else {
+                    continue;
                 }
-                continue;
-            }
-            let content = msg.content.trim();
-            // Skip empty messages
-            if content.len() == 0 {
-                continue;
             }
             let current = self.clients.get(&msg.client_id).unwrap();
             // Less than 2 players?
@@ -62,15 +60,33 @@ impl Server {
                 current.send("Please wait for another player");
                 continue;
             }
-            // Handle message
-            let current_game = &self.games[0];
-            let (to_current, to_opponent) = current_game.handle(&self.cards);
-            let opponent = self.clients.get(&current_game.get_other(msg.client_id)).unwrap();
-            current.send(json::encode(&to_current).unwrap());
-            opponent.send(json::encode(&to_opponent).unwrap());
-            // Debug
-            println!("{}: {}", msg.client_id.as_usize(), content);
+            // Now we're 100% at the point where there are 2 players and we can
+            // send messages to both of them
+            let opponent = self.clients.get(&self.games[0].get_other(msg.client_id)).unwrap();
+            let (to_current, to_opponent);
+            if should_start {
+                to_current = self.games[0].get_start_message(1);
+                to_opponent = self.games[0].get_start_message(0);
+            } else {
+                let content = msg.content.trim();
+                // Skip empty messages
+                if content.len() == 0 {
+                    continue;
+                }
+                // Handle message
+                let temp = self.games[0].handle(&self.cards);
+                to_current = temp.0;
+                to_opponent = temp.1;
+                // Debug
+                println!("{}: {}", msg.client_id.as_usize(), content);
+            }
+            self.send(&current, &opponent, to_current, to_opponent);
         }
+    }
+
+    fn send(&self, current: &ws::Sender, opponent: &ws::Sender, to_current: String, to_opponent: String) {
+        current.send(json::encode(&to_current).unwrap());
+        opponent.send(json::encode(&to_opponent).unwrap());
     }
 }
 

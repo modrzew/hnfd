@@ -94,6 +94,7 @@ impl Game {
         for i in 24..48 {
             self.deck.push(deck[i]);
         }
+        self.started = true;
     }
 
     fn get_state_message(&self) -> messages::StateMessage {
@@ -107,6 +108,23 @@ impl Game {
         }
     }
 
+    pub fn get_start_message(&self, index: usize) -> (String) {
+        let other: usize;
+        if index == 0 {
+            other = 1;
+        } else {
+            other = 0;
+        }
+        json::encode(&messages::StateMessage{
+            my_hand: self.players[index].hand.to_vec(),
+            my_taken: Vec::new(),
+            his_hand: self.players[other].hand.to_vec(),
+            his_taken: Vec::new(),
+            table: self.table.to_vec(),
+            deck_left: self.deck.len() as u8,
+        }).unwrap()
+    }
+
     /**
      * Handles single move in this game
      *
@@ -116,13 +134,9 @@ impl Game {
     // TODO: this method should really return Message instead of string!
     pub fn handle(&self, cards: &Vec<models::Card>) -> (String, String) {
         let (current, opponent);
-        if self.started {
-            current = json::encode(&messages::MoveMessage{ from: 1, to: 2});
-            opponent = json::encode(&messages::MoveMessage{ from: 1, to: 2});
-        } else {
-            current = json::encode(&self.get_state_message());
-            opponent = json::encode(&self.get_state_message());
-        }
+        // Normal move
+        current = json::encode(&messages::MoveMessage{ from: 1, to: 2});
+        opponent = json::encode(&messages::MoveMessage{ from: 1, to: 2});
         (current.unwrap(), opponent.unwrap())
     }
 }
