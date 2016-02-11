@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 
-// use rustc_serialize::json;
 use mio;
 use ws;
 use uuid::Uuid;
@@ -39,9 +38,10 @@ impl Server {
         while let Ok(msg) = self.receiver.recv() {
             // Add client on new connection
             if let Some(ws) = msg.ws {
-                if self.clients.len() <= 2 {
+                if self.clients.len() < 2 {
                     self.clients.insert(msg.client_id, ws);
                 } else {
+                    ws.send("Only 2 players supported at this time");
                     ws.close_with_reason(ws::CloseCode::Normal, "Only 2 players supported at this time").unwrap();
                 }
                 self.games[0].players.push(Player::new(msg.client_id));
@@ -52,10 +52,15 @@ impl Server {
             if content.len() == 0 {
                 continue;
             }
+            let current = self.clients.get(&msg.client_id).unwrap();
+            // Less than 2 players?
+            if self.clients.len() < 2 {
+                current.send("Please wait for another player");
+                continue;
+            }
             // Handle message
             let current_game = &self.games[0];
-            let (to_current, to_opponent) = current_game.handle();
-            let current = self.clients.get(&msg.client_id).unwrap();
+            let (to_current, to_opponent) = current_game.handle(&self.cards);
             let opponent = self.clients.get(&current_game.get_other(msg.client_id)).unwrap();
             current.send(to_current);
             opponent.send(to_opponent);
