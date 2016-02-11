@@ -46,6 +46,9 @@ impl Server {
                     ws.close_with_reason(ws::CloseCode::Normal, "Only 2 players supported at this time").unwrap();
                 }
                 self.games[0].add_player(msg.client_id);
+                if self.clients.len() == 2 {
+                    self.games[0].start();
+                }
                 continue;
             }
             let content = msg.content.trim();

@@ -1,12 +1,15 @@
+use rand::{thread_rng, Rng};
+
 use mio;
-use rustc_serialize::json;
+use rustc_serialize::Encodable;
+use rustc_serialize::json::{self, Encoder};
 
 use models;
 use messages;
 
 pub struct Player {
-    hand: Vec<usize>,
-    taken: Vec<usize>,
+    pub hand: Vec<u8>,
+    taken: Vec<u8>,
     pub token: mio::Token,
 }
 
@@ -21,15 +24,19 @@ impl Player {
 }
 
 pub struct Game {
-    table: Vec<usize>,
+    table: Vec<u8>,
+    deck: Vec<u8>,
     pub players: Vec<Player>,
+    started: bool,
 }
 
 impl Game {
     pub fn new() -> Game {
         Game {
             table: Vec::new(),
+            deck: Vec::new(),
             players: Vec::new(),
+            started: false,
         }
     }
 
@@ -56,15 +63,66 @@ impl Game {
     }
 
     /**
+     * LOL RUST DOESN'T HAVE range(48) BUILTIN? WTF
+     *
+     * TODO: FIND BETTER WAY OF DOING IT
+     */
+    fn get_new_deck(&self) -> [u8; 48] {
+        let mut deck: [u8; 48] = [0; 48];
+        for i in 0..48 {
+            deck[i] = i as u8;
+        }
+        thread_rng().shuffle(&mut deck);
+        deck
+    }
+
+    /**
+     * Resets game state and shuffles all necessary cards.
+     */
+    pub fn start(&mut self) {
+        let deck = self.get_new_deck();
+        // First 16 for players
+        for i in 0..8 {
+            self.players[0].hand.push(deck[i]);
+        }
+        for i in 8..16 {
+            self.players[1].hand.push(deck[i]);
+        }
+        for i in 16..24 {
+            self.table.push(deck[i]);
+        }
+        for i in 24..48 {
+            self.deck.push(deck[i]);
+        }
+    }
+
+    fn get_state_message(&self) -> messages::StateMessage {
+        messages::StateMessage{
+            my_hand: self.players[0].hand.to_vec(),
+            my_taken: self.players[0].taken.to_vec(),
+            his_hand: self.players[1].hand.to_vec(),
+            his_taken: self.players[1].taken.to_vec(),
+            table: self.table.to_vec(),
+            deck_left: self.deck.len() as u8,
+        }
+    }
+
+    /**
      * Handles single move in this game
      *
      * Returns messages that should go to player that did the move (first
      * value) and his opponent (second value).
      */
-    pub fn handle(&self, cards: &Vec<models::Card>) -> (messages::MoveMessage, messages::MoveMessage) {
-        (
-            messages::MoveMessage{ from: 1, to: 2},
-            messages::MoveMessage{ from: 1, to: 2},
-        )
+    // TODO: this method should really return Message instead of string!
+    pub fn handle(&self, cards: &Vec<models::Card>) -> (String, String) {
+        let (current, opponent);
+        if self.started {
+            current = json::encode(&messages::MoveMessage{ from: 1, to: 2});
+            opponent = json::encode(&messages::MoveMessage{ from: 1, to: 2});
+        } else {
+            current = json::encode(&self.get_state_message());
+            opponent = json::encode(&self.get_state_message());
+        }
+        (current.unwrap(), opponent.unwrap())
     }
 }

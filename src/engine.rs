@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use models::{Yaku, Card};
 
-fn get_hand_score(cards: &Vec<Card>, month: u8) -> u8 {
-    let mut point_counters: HashMap<u8, u8> = HashMap::new();
-    let mut yaku_counters: HashMap<Yaku, u8> = HashMap::new();
+fn get_hand_score(cards: &Vec<Card>, month: usize) -> usize {
+    let mut point_counters: HashMap<usize, usize> = HashMap::new();
+    let mut yaku_counters: HashMap<Yaku, usize> = HashMap::new();
 
     let mut points = 0;
     for card in cards {
@@ -86,7 +86,7 @@ mod get_hand_score_tests {
     /**
      * Produces vector full of cards with given point values
      */
-    fn produce_cards(values: Vec<u8>) -> Vec<Card> {
+    fn produce_cards(values: Vec<usize>) -> Vec<Card> {
         let mut result: Vec<Card> = Vec::new();
         for value in values {
             result.push(Card::new(1, value));

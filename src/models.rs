@@ -31,13 +31,13 @@ impl fmt::Display for Yaku {
 }
 
 pub struct Card {
-    pub month: u8,
-    pub points: u8,
+    pub month: usize,
+    pub points: usize,
     pub yaku: Yaku,
 }
 
 impl Card {
-    pub fn new_yaku(month: u8, points: u8, yaku: Yaku) -> Card {
+    pub fn new_yaku(month: usize, points: usize, yaku: Yaku) -> Card {
         Card{
             month: month,
             points: points,
@@ -45,7 +45,7 @@ impl Card {
         }
     }
 
-    pub fn new(month: u8, points: u8) -> Card {
+    pub fn new(month: usize, points: usize) -> Card {
         Card{
             month: month,
             points: points,
