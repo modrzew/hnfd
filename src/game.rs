@@ -132,7 +132,8 @@ impl Game {
      * value) and his opponent (second value).
      */
     // TODO: this method should really return Message instead of string!
-    pub fn handle(&self, cards: &Vec<models::Card>) -> (String, String) {
+    pub fn handle(&self, msg: &str, cards: &Vec<models::Card>) -> (String, String) {
+        let message: messages::MoveMessage = json::decode(msg).unwrap();
         let (current, opponent);
         // Normal move
         current = json::encode(&messages::MoveMessage{ from: 1, to: 2});

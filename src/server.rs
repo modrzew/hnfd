@@ -74,7 +74,7 @@ impl Server {
                     continue;
                 }
                 // Handle message
-                let temp = self.games[0].handle(&self.cards);
+                let temp = self.games[0].handle(content, &self.cards);
                 to_current = temp.0;
                 to_opponent = temp.1;
                 // Debug
