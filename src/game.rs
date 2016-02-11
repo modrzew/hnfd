@@ -2,25 +2,7 @@ use mio;
 use rustc_serialize::json;
 
 use models;
-
-enum MessageType {
-    NewGame,
-}
-
-#[derive(RustcDecodable, RustcEncodable)]
-struct GameMessage {
-    from: u8,
-    to: Option<u8>,
-}
-
-#[derive(RustcDecodable, RustcEncodable)]
-struct StateMessage {
-    my_hand: Vec<u8>,
-    my_taken: Vec<u8>,
-    his_hand: Vec<u8>,
-    his_taken: Vec<u8>,
-    table: Vec<u8>,
-}
+use messages;
 
 pub struct Player {
     hand: Vec<usize>,
@@ -39,14 +21,14 @@ impl Player {
 }
 
 pub struct Game {
-    table: String,
+    table: Vec<usize>,
     pub players: Vec<Player>,
 }
 
 impl Game {
     pub fn new() -> Game {
         Game {
-            table: "".to_string(),
+            table: Vec::new(),
             players: Vec::new(),
         }
     }
@@ -63,12 +45,26 @@ impl Game {
     }
 
     /**
+     * Who cares about docstrings, right?
+     * It's not like Rust has PEP257 or something.
+     *
+     * Man, this sounds c00l right now, but I'm sure I'll regret not writing
+     * docstring in 3 months.
+     */
+    pub fn add_player(&mut self, player: mio::Token) {
+        self.players.push(Player::new(player));
+    }
+
+    /**
      * Handles single move in this game
      *
-     * Returns messages that should go to player that did the move and his
-     * opponent
+     * Returns messages that should go to player that did the move (first
+     * value) and his opponent (second value).
      */
-    pub fn handle<'a>(&self, cards: &Vec<models::Card>) -> (&'a str, &'a str) {
-        (&"Czyki", &"bryki")
+    pub fn handle(&self, cards: &Vec<models::Card>) -> (messages::MoveMessage, messages::MoveMessage) {
+        (
+            messages::MoveMessage{ from: 1, to: 2},
+            messages::MoveMessage{ from: 1, to: 2},
+        )
     }
 }

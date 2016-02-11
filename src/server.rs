@@ -3,8 +3,9 @@ use std::sync::mpsc;
 use std::thread;
 
 use mio;
-use ws;
+use rustc_serialize::json;
 use uuid::Uuid;
+use ws;
 
 use game::{Game, Player};
 use models;
@@ -44,7 +45,7 @@ impl Server {
                     ws.send("Only 2 players supported at this time");
                     ws.close_with_reason(ws::CloseCode::Normal, "Only 2 players supported at this time").unwrap();
                 }
-                self.games[0].players.push(Player::new(msg.client_id));
+                self.games[0].add_player(msg.client_id);
                 continue;
             }
             let content = msg.content.trim();
@@ -62,8 +63,8 @@ impl Server {
             let current_game = &self.games[0];
             let (to_current, to_opponent) = current_game.handle(&self.cards);
             let opponent = self.clients.get(&current_game.get_other(msg.client_id)).unwrap();
-            current.send(to_current);
-            opponent.send(to_opponent);
+            current.send(json::encode(&to_current).unwrap());
+            opponent.send(json::encode(&to_opponent).unwrap());
             // Debug
             println!("{}: {}", msg.client_id.as_usize(), content);
         }

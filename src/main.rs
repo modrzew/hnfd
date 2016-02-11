@@ -7,6 +7,7 @@ mod models;
 mod server;
 mod engine;
 mod game;
+mod messages;
 
 
 fn main() {
