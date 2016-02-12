@@ -28,6 +28,8 @@ pub struct Game {
     deck: Vec<u8>,
     pub players: Vec<Player>,
     started: bool,
+    current_player: u8,
+    second_phase: bool,
 }
 
 impl Game {
@@ -37,6 +39,8 @@ impl Game {
             deck: Vec::new(),
             players: Vec::new(),
             started: false,
+            current_player: 0,
+            second_phase: false,
         }
     }
 
@@ -132,12 +136,18 @@ impl Game {
      * value) and his opponent (second value).
      */
     // TODO: this method should really return Message instead of string!
-    pub fn handle(&self, msg: &str, cards: &Vec<models::Card>) -> (String, String) {
+    pub fn handle(&self, token: mio::Token, msg: &str, cards: &Vec<models::Card>) -> Option<(String, String)> {
         let message: messages::MoveMessage = json::decode(msg).unwrap();
-        let (current, opponent);
-        // Normal move
-        current = json::encode(&messages::MoveMessage{ from: 1, to: 2});
-        opponent = json::encode(&messages::MoveMessage{ from: 1, to: 2});
-        (current.unwrap(), opponent.unwrap())
+        let (to_current, to_opponent);
+        // Validation
+        // My move?
+        let current = &self.players[self.current_player as usize];
+        if current.token != token {
+            None
+        } else {
+            to_current = json::encode(&messages::MoveMessage{ from: 1, to: 2});
+            to_opponent = json::encode(&messages::MoveMessage{ from: 1, to: 2});
+            Some((to_current.unwrap(), to_opponent.unwrap()))
+        }
     }
 }

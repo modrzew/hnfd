@@ -63,7 +63,7 @@ impl Server {
             // Now we're 100% at the point where there are 2 players and we can
             // send messages to both of them
             let opponent = self.clients.get(&self.games[0].get_other(msg.client_id)).unwrap();
-            let (to_current, to_opponent);
+            let (mut to_current, mut to_opponent) = ("".to_string(), "".to_string());
             if should_start {
                 to_current = self.games[0].get_start_message(1);
                 to_opponent = self.games[0].get_start_message(0);
@@ -74,13 +74,16 @@ impl Server {
                     continue;
                 }
                 // Handle message
-                let temp = self.games[0].handle(content, &self.cards);
-                to_current = temp.0;
-                to_opponent = temp.1;
+                if let Some(temp) =self.games[0].handle(msg.client_id, content, &self.cards) {
+                    to_current = temp.0;
+                    to_opponent = temp.1;
+                }
                 // Debug
                 println!("{}: {}", msg.client_id.as_usize(), content);
             }
-            self.send(&current, &opponent, to_current, to_opponent);
+            if to_current != "" && to_opponent != "" {
+                self.send(&current, &opponent, to_current, to_opponent);
+            }
         }
     }
 
