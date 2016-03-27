@@ -35,9 +35,13 @@ class Table extends Component {
 
 
 export default class Game extends Component {
+    send () {
+        this.props.sendMessage('{"from":1,"to":3}');
+    }
+
     render () {
         return (
-            <div>
+            <div onClick={this.send.bind(this)}>
                 <Hand cardsCount={this.props.his_hand_count} />
                 <Table cards={this.props.table} />
                 <Hand cards={this.props.my_hand} />

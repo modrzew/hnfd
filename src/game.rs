@@ -128,7 +128,7 @@ impl Game {
         json::encode(&messages::StateMessage{
             my_hand: self.players[index].hand.to_vec(),
             my_taken: Vec::new(),
-            his_hand_count: 0,
+            his_hand_count: self.players[other].hand.len() as u8,
             his_taken: Vec::new(),
             table: self.table.to_vec(),
             deck_left: self.deck.len() as u8,
