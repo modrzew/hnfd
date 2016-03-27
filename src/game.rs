@@ -101,12 +101,18 @@ impl Game {
         self.started = true;
     }
 
-    fn get_state_message(&self) -> messages::StateMessage {
+    fn get_state_message(&self, index: usize) -> messages::StateMessage {
+        let other: usize;
+        if index == 0 {
+            other = 1;
+        } else {
+            other = 0;
+        }
         messages::StateMessage{
-            my_hand: self.players[0].hand.to_vec(),
-            my_taken: self.players[0].taken.to_vec(),
-            his_hand: self.players[1].hand.to_vec(),
-            his_taken: self.players[1].taken.to_vec(),
+            my_hand: self.players[index].hand.to_vec(),
+            my_taken: self.players[index].taken.to_vec(),
+            his_hand_count: self.players[other].hand.len() as u8,
+            his_taken: self.players[other].taken.to_vec(),
             table: self.table.to_vec(),
             deck_left: self.deck.len() as u8,
         }
@@ -122,7 +128,7 @@ impl Game {
         json::encode(&messages::StateMessage{
             my_hand: self.players[index].hand.to_vec(),
             my_taken: Vec::new(),
-            his_hand: self.players[other].hand.to_vec(),
+            his_hand_count: 0,
             his_taken: Vec::new(),
             table: self.table.to_vec(),
             deck_left: self.deck.len() as u8,
